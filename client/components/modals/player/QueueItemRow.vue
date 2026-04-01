@@ -1,5 +1,6 @@
 <template>
   <div v-if="item" class="w-full flex items-center px-4 py-2" :class="wrapperClass" @mouseover="mouseover" @mouseleave="mouseleave">
+    <span class="drag-handle material-symbols text-xl text-gray-400 hover:text-gray-200 mr-2 cursor-grab" :class="isDragging ? 'cursor-grabbing' : ''" @mousedown.stop>drag_indicator</span>
     <covers-preview-cover :src="coverUrl" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
     <div class="grow px-2 py-1 queue-item-row-content truncate">
       <p class="text-gray-200 text-sm truncate">{{ title }}</p>
@@ -28,7 +29,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    index: Number
+    index: Number,
+    isDragging: Boolean
   },
   data() {
     return {

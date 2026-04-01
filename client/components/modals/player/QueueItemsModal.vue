@@ -13,19 +13,36 @@
           <div class="grow" />
           <ui-checkbox v-model="playerQueueAutoPlay" label="Auto Play" medium checkbox-bg="primary" border-color="gray-600" label-class="pl-2 mb-px" />
         </div>
-        <modals-player-queue-item-row v-for="(item, index) in playerQueueItems" :key="index" :item="item" :index="index" @play="playItem(index)" @remove="removeItem" />
+        <draggable v-model="queueItemsCopy" v-bind="dragOptions" handle=".drag-handle" draggable=".queue-item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
+          <transition-group type="transition" :name="!drag ? 'queue-item' : null">
+            <modals-player-queue-item-row v-for="(item, index) in queueItemsCopy" :key="item.libraryItemId + '-' + (item.episodeId || index)" :is-dragging="drag" :item="item" :index="index" class="queue-item" @play="playItem(index)" @remove="removeItem" />
+          </transition-group>
+        </draggable>
       </div>
     </div>
   </modals-modal>
 </template>
 
 <script>
+import draggable from 'vuedraggable'
+
 export default {
+  components: {
+    draggable
+  },
   props: {
     value: Boolean
   },
   data() {
-    return {}
+    return {
+      drag: false,
+      dragOptions: {
+        animation: 200,
+        ghostClass: 'ghost',
+        chosenClass: 'chosen'
+      },
+      queueItemsCopy: []
+    }
   },
   computed: {
     show: {
@@ -48,7 +65,23 @@ export default {
       return this.$store.state.playerQueueItems || []
     }
   },
+  watch: {
+    playerQueueItems: {
+      handler() {
+        this.initCopy()
+      }
+    },
+    show(newVal) {
+      if (newVal) this.initCopy()
+    }
+  },
   methods: {
+    initCopy() {
+      this.queueItemsCopy = this.playerQueueItems.map((i) => ({ ...i }))
+    },
+    draggableUpdate() {
+      this.$store.commit('setPlayerQueueItems', this.queueItemsCopy)
+    },
     playItem(index) {
       this.$eventBus.$emit('play-queue-item', {
         index
@@ -58,6 +91,23 @@ export default {
     removeItem(item) {
       this.$store.commit('removeItemFromQueue', item)
     }
+  },
+  mounted() {
+    this.initCopy()
   }
 }
 </script>
+
+<style scoped>
+.queue-item {
+  transition: transform 0.2s ease;
+}
+.ghost {
+  opacity: 0.3;
+  border-top: 2px solid #4ade80;
+}
+.chosen {
+  background: rgba(74, 222, 128, 0.1) !important;
+  border-radius: 4px;
+}
+</style>
